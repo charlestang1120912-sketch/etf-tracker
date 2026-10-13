@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主動式ETF與台股槓桿ETF追蹤回測系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-chart-line text-emerald-400 text-2xl"></i>
+                <h1 class="text-lg font-bold tracking-wider">主動式 ETF & 正二追蹤系統</h1>
+            </div>
+            <div id="update-time" class="text-xs text-slate-400 hidden sm:block">最後更新：載入中...</div>
+        </div>
+    </header>
+
+    <!-- 主容器 -->
+    <div class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- 側邊欄標的選單 -->
+        <aside class="lg:col-span-1 bg-slate-900/80 border border-slate-800 rounded-xl p-4 backdrop-blur">
+            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">追蹤標的清單</h2>
+            <div id="etf-nav-list" class="space-y-1.5">
+                <!-- 動態載入 -->
+            </div>
+        </aside>
+
+        <!-- 內容主畫面 -->
+        <main class="lg:col-span-3 space-y-6" id="main-content">
+            <!-- 動態渲染區域 -->
+        </main>
+    </div>
+
+    <script>
+        let globalData = null;
+        let currentTab = 'overview';
+        let chartInstance = null;
+
+        async function loadData() {
+            try {
+                const response = await fetch('etf_data.json');
+                globalData = await response.json();
+                document.getElementById('update-time').innerText = `最後更新：${globalData.update_time}`;
+                renderNav();
+                renderContent();
+            } catch (error) {
+                console.error('載入資料失敗，載入預設展示資料', error);
+                // 離線預設展示
+                globalData = {
+                    update_time: "2026-10-13 18:00:00",
+                    etfs: [
+                        {code: "00981A", name: "統一台股增長主動式ETF", category: "主動式ETF", ytd: 18.5, return_1y: 26.4, return_2y: 48.2, scale: 68.5, price: 28.5, change: 0.35, holdings_change: [{stock: "2330 台積電", action: "加碼", shares: "+50,000股", days: "連續3天加碼"}]},
+                        {code: "0050", name: "元大台灣50", category: "市值型ETF", ytd: 16.2, return_1y: 24.1, return_2y: 45.0, scale: 3200.0, price: 185.0, change: 1.20, holdings_change: []},
+                        {code: "00631L", name: "元大台灣50正2", category: "槓桿型ETF", ytd: 38.2, return_1y: 55.0, return_2y: 95.0, scale: 150.2, price: 142.0, change: 2.80, holdings_change: []}
+                    ]
+                };
+                renderNav();
+                renderContent();
+            }
+        }
+
+        function renderNav() {
+            const navContainer = document.getElementById('etf-nav-list');
+            let html = `
+                <button onclick="switchTab('overview')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition ${currentTab === 'overview' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/30' : 'text-slate-300 hover:bg-slate-800'}">
+                    <i class="fa-solid fa-house-chimney mr-2"></i> 五檔主動與績效總覽
+                </button>
+                <div class="pt-2 pb-1 text-xs text-slate-500 uppercase font-bold px-2">追蹤標的</div>
+            `;
+
+            globalData.etfs.forEach(etf => {
+                const isActive = currentTab === etf.code;
+                html += `
+                    <button onclick="switchTab('${etf.code}')" class="w-full flex justify-between items-center px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-emerald-600 text-white font-bold shadow-md' : 'text-slate-300 hover:bg-slate-800'}">
+                        <span>${etf.code} ${etf.name.substring(0, 8)}...</span>
+                        <span class="text-xs px-1.5 py-0.5 rounded ${etf.ytd >= 0 ? 'bg-emerald-900/60 text-emerald-300' : 'bg-rose-900/60 text-rose-300'}">${etf.ytd > 0 ? '+' : ''}${etf.ytd}%</span>
+                    </button>
+                `;
+            });
+            navContainer.innerHTML = html;
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            renderNav();
+            renderContent();
+        }
+
+        function renderContent() {
+            const main = document.getElementById('main-content');
+            if (currentTab === 'overview') {
+                main.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h2 class="text-xl font-bold mb-4 flex items-center"><i class="fa-solid fa-trophy text-amber-400 mr-2"></i> 10大焦點 ETF 績效與規模總覽</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-800 text-slate-400 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">代號/名稱</th>
+                                        <th class="p-3">類型</th>
+                                        <th class="p-3 text-right">股價</th>
+                                        <th class="p-3 text-right">今年至今(YTD)</th>
+                                        <th class="p-3 text-right">回測1年</th>
+                                        <th class="p-3 text-right">規模(億)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    ${globalData.etfs.map(e => `
+                                        <tr class="hover:bg-slate-800/50 cursor-pointer" onclick="switchTab('${e.code}')">
+                                            <td class="p-3 font-bold text-emerald-400">${e.code} <span class="text-slate-300 font-normal">${e.name}</span></td>
+                                            <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-slate-800 text-slate-300">${e.category}</span></td>
+                                            <td class="p-3 text-right">${e.price}</td>
+                                            <td class="p-3 text-right font-semibold ${e.ytd >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${e.ytd > 0 ? '+' : ''}${e.ytd}%</td>
+                                            <td class="p-3 text-right ${e.return_1y >= 0 ? 'text-emerald-400' : 'text-rose-400'}">+${e.return_1y}%</td>
+                                            <td class="p-3 text-right text-slate-400">${e.scale}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const etf = globalData.etfs.find(e => e.code === currentTab);
+                if (!etf) return;
+
+                main.innerHTML = `
+                    <div class="space-y-6">
+                        <!-- 標題資訊卡 -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-2xl font-black text-emerald-400">${etf.code}</span>
+                                    <h2 class="text-xl font-bold">${etf.name}</h2>
+                                    <span class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-300">${etf.category}</span>
+                                </div>
+                                <p class="text-sm text-slate-400 mt-1">即時追蹤面板與持股變化分析</p>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold">${etf.price} <span class="text-xs text-emerald-400 font-normal">(+${etf.change})</span></div>
+                                    <div class="text-xs text-slate-400">目前股價 / 淨值</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- K線與走勢圖 -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                            <h3 class="text-md font-bold mb-4 flex items-center"><i class="fa-solid fa-chart-area text-blue-400 mr-2"></i> 淨值與走勢互動圖表</h3>
+                            <div class="h-64 w-full">
+                                <canvas id="etfChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- 持股變動與摘要 -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                            <h3 class="text-md font-bold mb-4 flex items-center"><i class="fa-solid fa-list-check text-emerald-400 mr-2"></i> 最新持股增減與連續買賣紀錄</h3>
+                            ${etf.holdings_change && etf.holdings_change.length > 0 ? `
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-sm">
+                                        <thead class="bg-slate-800 text-slate-400 text-xs">
+                                            <tr>
+                                                <th class="p-3">股票標的</th>
+                                                <th class="p-3">動作</th>
+                                                <th class="p-3">變動股數</th>
+                                                <th class="p-3">連續天數狀態</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-800">
+                                            ${etf.holdings_change.map(h => `
+                                                <tr>
+                                                    <td class="p-3 font-semibold">${h.stock}</td>
+                                                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs ${h.action === '加碼' ? 'bg-emerald-900 text-emerald-300' : 'bg-rose-900 text-rose-300'}">${h.action}</span></td>
+                                                    <td class="p-3">${h.shares}</td>
+                                                    <td class="p-3 text-amber-400 font-medium">${h.days}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : `<p class="text-sm text-slate-400">今日尚無重大持股增減變动或為非主動式配置標的。</p>`}
+                        </div>
+                    </div>
+                `;
+                renderChart();
+            }
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('etfChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['5天前', '4天前', '3天前', '2天前', '昨日', '今日'],
+                    datasets: [{
+                        label: '走勢淨值',
+                        data: [27.2, 27.5, 27.8, 28.1, 28.2, 28.5],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
