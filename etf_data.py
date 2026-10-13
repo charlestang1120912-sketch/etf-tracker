@@ -3,7 +3,6 @@ import json
 
 
 def generate_etf_data():
-  # 涵蓋 5 檔主動式 ETF + 1 檔市值型 + 4 檔正二槓桿 ETF
   data = {
       "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
       "etfs": [
@@ -31,15 +30,6 @@ def generate_etf_data():
                       "days": "連續2天減碼",
                   },
               ],
-              "history": [
-                  {
-                      "date": "2026-10-12",
-                      "stock": "2330 台積電",
-                      "action": "加碼",
-                      "shares": "+50",
-                      "price": 1050,
-                  }
-              ],
           },
           {
               "code": "00992A",
@@ -59,7 +49,6 @@ def generate_etf_data():
                       "days": "連續4天加碼",
                   }
               ],
-              "history": [],
           },
           {
               "code": "00991A",
@@ -72,7 +61,6 @@ def generate_etf_data():
               "price": 24.8,
               "change": -0.15,
               "holdings_change": [],
-              "history": [],
           },
           {
               "code": "00994A",
@@ -85,7 +73,6 @@ def generate_etf_data():
               "price": 27.1,
               "change": 0.20,
               "holdings_change": [],
-              "history": [],
           },
           {
               "code": "00980A",
@@ -98,7 +85,6 @@ def generate_etf_data():
               "price": 22.5,
               "change": 0.10,
               "holdings_change": [],
-              "history": [],
           },
           {
               "code": "0050",
@@ -111,7 +97,6 @@ def generate_etf_data():
               "price": 185.0,
               "change": 1.20,
               "holdings_change": [],
-              "history": [],
           },
           {
               "code": "00631L",
@@ -124,7 +109,6 @@ def generate_etf_data():
               "price": 142.0,
               "change": 2.80,
               "holdings_change": [],
-              "history": [],
           },
           {
               "code": "00685L",
@@ -137,7 +121,6 @@ def generate_etf_data():
               "price": 88.5,
               "change": 1.90,
               "holdings_change": [],
-              "history": [],
           },
           {
               "code": "00675L",
@@ -150,7 +133,6 @@ def generate_etf_data():
               "price": 95.0,
               "change": 2.10,
               "holdings_change": [],
-              "history": [],
           },
           {
               "code": "00663L",
@@ -163,17 +145,13 @@ def generate_etf_data():
               "price": 90.2,
               "change": 2.00,
               "holdings_change": [],
-              "history": [],
           },
       ],
   }
 
   with open("etf_data.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
-  print(
-      f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 資料更新成功，已寫入"
-      " etf_data.json"
-  )
+  print("資料更新成功！")
 
 
 if __name__ == "__main__":
