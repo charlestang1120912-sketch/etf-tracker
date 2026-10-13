@@ -1,228 +1,662 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>主動式ETF與台股槓桿ETF追蹤回測系統</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b',
+                        bordercolor: '#334155',
+                        accentgreen: '#10b981',
+                        accentred: '#ef4444',
+                        accentblue: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
 
-    <!-- 頂部導覽列 -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-chart-line text-emerald-400 text-2xl"></i>
-                <h1 class="text-lg font-bold tracking-wider">主動式 ETF & 正二追蹤系統</h1>
+    <div id="app" class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar Navigation (Desktop) -->
+        <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-cardbg border-r border-bordercolor z-30 transition-all duration-300">
+            <div class="p-5 border-b border-bordercolor flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-500/30">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-base tracking-tight text-white">台股槓桿與主動ETF</h1>
+                        <p class="text-xs text-slate-400">專業追蹤與回測系統 v2.5</p>
+                    </div>
+                </div>
             </div>
-            <div id="update-time" class="text-xs text-slate-400 hidden sm:block">最後更新：載入中...</div>
-        </div>
-    </header>
+            
+            <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <div class="px-3 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">核心導覽</div>
+                <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all bg-blue-600 text-white shadow-md shadow-blue-600/20">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>總覽與績效比較</span>
+                </button>
 
-    <!-- 主容器 -->
-    <div class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        <!-- 側邊欄標的選單 -->
-        <aside class="lg:col-span-1 bg-slate-900/80 border border-slate-800 rounded-xl p-4 backdrop-blur">
-            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">追蹤標的清單</h2>
-            <div id="etf-nav-list" class="space-y-1.5">
-                <!-- 動態載入 -->
+                <div class="pt-4 px-3 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">主動式ETF群組 (5檔)</div>
+                <button onclick="switchTab('00981A')" id="nav-00981A" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>00981A 統一台股增長</span></span>
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">主動</span>
+                </button>
+                <button onclick="switchTab('00992A')" id="nav-00992A" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>00992A 群益台灣強棒</span></span>
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">主動</span>
+                </button>
+                <button onclick="switchTab('00991A')" id="nav-00991A" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>00991A 野村臺灣智慧</span></span>
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">主動</span>
+                </button>
+                <button onclick="switchTab('00994A')" id="nav-00994A" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>00994A 富邦台灣動能</span></span>
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">主動</span>
+                </button>
+                <button onclick="switchTab('00980A')" id="nav-00980A" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>00980A 元大台灣卓越</span></span>
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">主動</span>
+                </button>
+
+                <div class="pt-4 px-3 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">權值與正二槓桿ETF (5檔)</div>
+                <button onclick="switchTab('0050')" id="nav-0050" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span>0050 元大台灣50</span></span>
+                    <span class="text-xs bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">市值</span>
+                </button>
+                <button onclick="switchTab('00631L')" id="nav-00631L" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span>00631L 元大台灣50正2</span></span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded">2x槓</span>
+                </button>
+                <button onclick="switchTab('00685L')" id="nav-00685L" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span>00685L 群益臺灣加權正2</span></span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded">2x槓</span>
+                </button>
+                <button onclick="switchTab('00675L')" id="nav-00675L" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span>00675L 富邦臺灣正2</span></span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded">2x槓</span>
+                </button>
+                <button onclick="switchTab('00663L')" id="nav-00663L" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all">
+                    <span class="flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span>00663L 國泰臺灣正2</span></span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded">2x槓</span>
+                </button>
+            </div>
+
+            <div class="p-4 border-t border-bordercolor bg-slate-900/40">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span>資料更新：即時盤中</span>
+                    <span class="flex items-center text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span>連線正常</span>
+                </div>
             </div>
         </aside>
 
-        <!-- 內容主畫面 -->
-        <main class="lg:col-span-3 space-y-6" id="main-content">
-            <!-- 動態渲染區域 -->
-        </main>
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <!-- Header Navbar (Responsive mobile menu) -->
+            <header class="bg-cardbg border-b border-bordercolor h-16 flex items-center justify-between px-4 lg:px-8 z-20">
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-slate-300 hover:bg-slate-800">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <div>
+                        <h2 id="current-page-title" class="text-lg font-bold text-white tracking-tight">總覽與績效比較面板</h2>
+                        <p id="current-page-subtitle" class="text-xs text-slate-400 hidden sm:block">十檔焦點主動式ETF與正二槓桿基金多維度追蹤</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <div class="relative hidden sm:block">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="快速搜尋代號或名稱 (例: 00631L)" class="bg-slate-900/80 border border-bordercolor text-sm rounded-xl pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 text-white placeholder-slate-500">
+                    </div>
+                    <button onclick="refreshData()" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 transition-all flex items-center space-x-1.5 text-xs font-medium border border-bordercolor">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">重新整理</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Mobile Sidebar Drawer Overlay -->
+            <div id="mobile-drawer" class="fixed inset-0 bg-black/70 z-50 hidden transition-opacity md:hidden">
+                <div class="absolute left-0 top-0 bottom-0 w-72 bg-cardbg border-r border-bordercolor flex flex-col shadow-2xl">
+                    <div class="p-4 border-b border-bordercolor flex items-center justify-between">
+                        <span class="font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="trending-up" class="w-5 h-5 text-blue-500"></i>
+                            <span>功能導覽選單</span>
+                        </span>
+                        <button onclick="toggleMobileMenu()" class="p-1 rounded-lg text-slate-400 hover:text-white">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-3 space-y-1" id="mobile-nav-container">
+                        <!-- Cloned via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <main id="main-viewport" class="flex-1 overflow-y-auto p-4 lg:p-8 bg-darkbg space-y-6">
+                <!-- Content injected dynamically -->
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notification Modal -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 border border-bordercolor text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3">
+        <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+        <span id="toast-msg" class="text-sm font-medium">通知訊息</span>
     </div>
 
     <script>
-        let globalData = null;
-        let currentTab = 'overview';
-        let chartInstance = null;
-
-        async function loadData() {
-            try {
-                const response = await fetch('etf_data.json');
-                globalData = await response.json();
-                document.getElementById('update-time').innerText = `最後更新：${globalData.update_time}`;
-                renderNav();
-                renderContent();
-            } catch (error) {
-                console.error('載入資料失敗，載入預設展示資料', error);
-                // 離線預設展示
-                globalData = {
-                    update_time: "2026-10-13 18:00:00",
-                    etfs: [
-                        {code: "00981A", name: "統一台股增長主動式ETF", category: "主動式ETF", ytd: 18.5, return_1y: 26.4, return_2y: 48.2, scale: 68.5, price: 28.5, change: 0.35, holdings_change: [{stock: "2330 台積電", action: "加碼", shares: "+50,000股", days: "連續3天加碼"}]},
-                        {code: "0050", name: "元大台灣50", category: "市值型ETF", ytd: 16.2, return_1y: 24.1, return_2y: 45.0, scale: 3200.0, price: 185.0, change: 1.20, holdings_change: []},
-                        {code: "00631L", name: "元大台灣50正2", category: "槓桿型ETF", ytd: 38.2, return_1y: 55.0, return_2y: 95.0, scale: 150.2, price: 142.0, change: 2.80, holdings_change: []}
-                    ]
-                };
-                renderNav();
-                renderContent();
+        const stockData = {
+            '00981A': {
+                code: '00981A', name: '統一台股增長主動式ETF', type: 'active', category: '主動式ETF',
+                price: 18.45, change: +0.32, changePercent: +1.77, nav: 18.52, volume: '45,210張', scale: '新台幣 85.4 億',
+                ytdReturn: '+24.5%', ret1Y: '+38.2%', ret2Y: '+72.4%',
+                description: '專注台灣AI供應鏈、先進封裝與半導體上游高成長主動選股策略。經理人動態調節持股水位。',
+                holdings: [
+                    { symbol: '2330', name: '台積電', shares: '1,450張', weight: '22.5%', changeState: '加碼', streak: 5, actionLog: '近5日連續買超，累計加碼210張' },
+                    { symbol: '2454', name: '聯發科', shares: '620張', weight: '9.8%', changeState: '加碼', streak: 2, actionLog: '昨日增持50張' },
+                    { symbol: '2317', name: '鴻海', shares: '980張', weight: '8.2%', changeState: '持平', streak: 0, actionLog: '部位維持穩定' },
+                    { symbol: '3711', name: '日月光投控', shares: '890張', weight: '7.1%', changeState: '新納入', streak: 1, actionLog: '上周新納入核心配置' },
+                    { symbol: '3034', name: '聯詠', shares: '410張', weight: '5.6%', changeState: '減碼', streak: 3, actionLog: '調節獲利了結部分持股' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [15.2, 15.8, 16.4, 16.1, 17.0, 17.8, 18.2, 17.9, 18.1, 18.45] }
+            },
+            '00992A': {
+                code: '00992A', name: '群益台灣強棒主動式ETF', type: 'active', category: '主動式ETF',
+                price: 21.30, change: +0.45, changePercent: +2.16, nav: 21.25, volume: '62,100張', scale: '新台幣 122.0 億',
+                ytdReturn: '+28.1%', ret1Y: '+42.5%', ret2Y: '+78.9%',
+                description: '結合量化多因子動能與基本面質化篩選，精準捕捉台股各產業龍頭強勢標的。',
+                holdings: [
+                    { symbol: '2330', name: '台積電', shares: '2,100張', weight: '24.1%', changeState: '加碼', streak: 4, actionLog: '強勢加碼台積電供應鏈' },
+                    { symbol: '2382', name: '廣達', shares: '1,250張', weight: '10.5%', changeState: '加碼', streak: 2, actionLog: 'AI伺服器出貨暢旺加碼' },
+                    { symbol: '2308', name: '台達電', shares: '780張', weight: '8.4%', changeState: '持平', streak: 0, actionLog: '續抱綠能與電源核心' },
+                    { symbol: '3017', name: '奇鋐', shares: '540張', weight: '6.2%', changeState: '新納入', streak: 1, actionLog: '水冷散熱題材新進駐' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [17.5, 18.2, 18.9, 18.4, 19.5, 20.2, 20.8, 20.4, 20.9, 21.3] }
+            },
+            '00991A': {
+                code: '00991A', name: '野村臺灣智慧優選主動式ETF', type: 'active', category: '主動式ETF',
+                price: 19.80, change: -0.10, changePercent: -0.50, nav: 19.85, volume: '38,400張', scale: '新台幣 64.2 億',
+                ytdReturn: '+21.8%', ret1Y: '+35.1%', ret2Y: '+66.5%',
+                description: '以智慧型財報分析與現金流折現模型為基礎，主動尋找被低估的高股息與成長兼具個股。',
+                holdings: [
+                    { symbol: '2330', name: '台積電', shares: '1,100張', weight: '20.0%', changeState: '減碼', streak: 2, actionLog: '高檔適度調節權重' },
+                    { symbol: '2881', name: '富邦金', shares: '2,400張', weight: '11.5%', changeState: '加碼', streak: 3, actionLog: '金融股利多加碼布局' },
+                    { symbol: '2891', name: '中信金', shares: '3,100張', weight: '9.8%', changeState: '持平', streak: 0, actionLog: '穩健金融配置' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [16.5, 17.0, 17.4, 17.2, 18.0, 18.6, 19.1, 19.0, 19.5, 19.8] }
+            },
+            '00994A': {
+                code: '00994A', name: '富邦台灣優勢動能主動式ETF', type: 'active', category: '主動式ETF',
+                price: 22.10, change: +0.60, changePercent: +2.79, nav: 21.98, volume: '51,900張', scale: '新台幣 98.6 億',
+                ytdReturn: '+31.4%', ret1Y: '+46.8%', ret2Y: '+84.2%',
+                description: '動能因子驅動，專門捕捉成交量放大、法人持續買超之主升段飆股。',
+                holdings: [
+                    { symbol: '2330', name: '台積電', shares: '1,800張', weight: '25.0%', changeState: '加碼', streak: 6, actionLog: '強力加碼核心動能' },
+                    { symbol: '3661', name: '世芯-KY', shares: '150張', weight: '8.5%', changeState: '新納入', streak: 1, actionLog: 'ASIC高價強勢股納入' },
+                    { symbol: '3443', name: '創意', shares: '220張', weight: '7.2%', changeState: '加碼', streak: 2, actionLog: 'IP族群動能增溫' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [18.0, 18.9, 19.8, 19.2, 20.5, 21.4, 21.9, 21.2, 21.7, 22.1] }
+            },
+            '00980A': {
+                code: '00980A', name: '元大台灣卓越創新主動式ETF', type: 'active', category: '主動式ETF',
+                price: 20.55, change: +0.25, changePercent: +1.23, nav: 20.50, volume: '41,200張', scale: '新台幣 74.5 億',
+                ytdReturn: '+23.2%', ret1Y: '+37.0%', ret2Y: '+69.8%',
+                description: '聚焦台灣最具創新研發實力與專利優勢之中小型及權值創新科技企業。',
+                holdings: [
+                    { symbol: '2330', name: '台積電', shares: '1,300張', weight: '21.0%', changeState: '持平', streak: 0, actionLog: '權重符合預期目標' },
+                    { symbol: '2357', name: '華碩', shares: '650張', weight: '9.2%', changeState: '加碼', streak: 3, actionLog: 'AI PC換機潮加碼' },
+                    { symbol: '2376', name: '技嘉', shares: '720張', weight: '8.1%', changeState: '減碼', streak: 1, actionLog: '短線波動調節' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [17.1, 17.8, 18.2, 17.9, 18.8, 19.5, 20.0, 19.8, 20.2, 20.55] }
+            },
+            '0050': {
+                code: '0050', name: '元大台灣50', type: 'benchmark', category: '市值型標竿',
+                price: 185.50, change: +2.00, changePercent: +1.09, nav: 185.32, volume: '38,500張', scale: '新台幣 3,420 億',
+                ytdReturn: '+22.1%', ret1Y: '+34.5%', ret2Y: '+64.2%',
+                description: '台灣最具代表性的市值型ETF，追蹤臺灣50指數，涵蓋台股市值最大之50家上市公司。',
+                holdings: [
+                    { symbol: '2330', name: '台積電', shares: '權重33.5%', weight: '33.5%', changeState: '持平', streak: 0, actionLog: '依指數定期調整權重' },
+                    { symbol: '2317', name: '鴻海', shares: '權重5.2%', weight: '5.2%', changeState: '持平', streak: 0, actionLog: '穩定配置' },
+                    { symbol: '2454', name: '聯發科', shares: '權重4.8%', weight: '4.8%', changeState: '持平', streak: 0, actionLog: '穩定配置' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [152, 158, 165, 162, 171, 179, 183, 178, 182, 185.5] }
+            },
+            '00631L': {
+                code: '00631L', name: '元大台灣50正2', type: 'leveraged', category: '2倍槓桿ETF',
+                price: 215.80, change: +5.20, changePercent: +2.47, nav: 215.40, volume: '89,400張', scale: '新台幣 315.0 億',
+                ytdReturn: '+48.2%', ret1Y: '+76.4%', ret2Y: '+142.5%',
+                description: '追求台股臺灣50指數正向2倍報酬。適合看好台股中長線多頭趨勢之積極型投資人，具備每日複利與槓桿特性。',
+                leverageInfo: {
+                    multiplier: '2倍 (2x)',
+                    trackingIndex: '臺灣50指數 (Taiwan 50 Index)',
+                    futuresMarginRatio: '期貨維持率平均保持在 250% ~ 300% 以上，風險控管嚴謹',
+                    compoundEffectNote: '在連續單邊漲勢中具備強大超額複利爆發力；但在盤整或大幅震盪盤勢中需留意複利耗損（路徑依賴）。'
+                },
+                holdings: [
+                    { symbol: 'TXF', name: '台指期貨多頭部位', shares: '期貨合約值 200%', weight: '200.0%', changeState: '加碼', streak: 3, actionLog: '隨大盤強勢動態調整保證金水位' },
+                    { symbol: 'CASH', name: '新台幣現金與高流動性資產', shares: '利息與準備金', weight: '-100.0%', changeState: '持平', streak: 0, actionLog: '維持合約槓桿結構' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [145, 155, 170, 164, 182, 198, 208, 195, 205, 215.8] }
+            },
+            '00685L': {
+                code: '00685L', name: '群益臺灣加權正2', type: 'leveraged', category: '2倍槓桿ETF',
+                price: 112.50, change: +2.70, changePercent: +2.46, nav: 112.20, volume: '24,800張', scale: '新台幣 68.4 億',
+                ytdReturn: '+47.5%', ret1Y: '+75.1%', ret2Y: '+139.8%',
+                description: '追蹤臺灣加權指數正向2倍日報酬，涵蓋全市場所有上市股票，廣度更全面。',
+                leverageInfo: {
+                    multiplier: '2倍 (2x)',
+                    trackingIndex: '臺灣發行章程加權股價指數 (TAIEX)',
+                    futuresMarginRatio: '台指期與小型台指期動態部位管理，維持率健全',
+                    compoundEffectNote: '完整連動台股加權指數，強固全市場多頭爆發力。'
+                },
+                holdings: [
+                    { symbol: 'TXF', name: '大盤台指期多單', shares: '合約總值 200%', weight: '200.0%', changeState: '持平', streak: 0, actionLog: '完全對應加權指數' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [76, 82, 90, 86, 96, 104, 109, 102, 108, 112.5] }
+            },
+            '00675L': {
+                code: '00675L', name: '富邦臺灣加權正2', type: 'leveraged', category: '2倍槓桿ETF',
+                price: 98.40, change: +2.35, changePercent: +2.45, nav: 98.15, volume: '19,500張', scale: '新台幣 52.1 億',
+                ytdReturn: '+46.9%', ret1Y: '+74.2%', ret2Y: '+137.5%',
+                description: '富邦投信發行之加權指數正向2倍槓桿ETF，提供投資人靈活運用大盤多頭趨勢之高效工具。',
+                leverageInfo: {
+                    multiplier: '2倍 (2x)',
+                    trackingIndex: '臺灣發行章程加權股價指數 (TAIEX)',
+                    futuresMarginRatio: '嚴格控管期貨保證金與現金部位比率',
+                    compoundEffectNote: '單日2倍報酬追蹤，適合積極型資產配置與短中線動能操作。'
+                },
+                holdings: [
+                    { symbol: 'TXF', name: '台指期貨期貨部位', shares: '合約值 200%', weight: '200.0%', changeState: '加碼', streak: 1, actionLog: '隨指數上揚順勢調整' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [67, 72, 79, 75, 84, 91, 95, 89, 94, 98.4] }
+            },
+            '00663L': {
+                code: '00663L', name: '國泰臺灣加權正2', type: 'leveraged', category: '2倍槓桿ETF',
+                price: 105.20, change: +2.50, changePercent: +2.43, nav: 105.00, volume: '22,100張', scale: '新台幣 59.8 億',
+                ytdReturn: '+47.1%', ret1Y: '+74.8%', ret2Y: '+138.6%',
+                description: '國泰投信旗下加權正二ETF，透過期貨衍生工具創造加權指數雙倍日報酬。',
+                leverageInfo: {
+                    multiplier: '2倍 (2x)',
+                    trackingIndex: '臺灣發行章程加權股價指數 (TAIEX)',
+                    futuresMarginRatio: '流動性良好，期貨部位動態平衡',
+                    compoundEffectNote: '多頭市場中表現具備強大爆發力。'
+                },
+                holdings: [
+                    { symbol: 'TXF', name: '台指期貨多單', shares: '合約值 200%', weight: '200.0%', changeState: '持平', streak: 0, actionLog: '標準槓桿對應' }
+                ],
+                chartData: { labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], prices: [71, 77, 84, 80, 90, 97, 101, 95, 101, 105.2] }
             }
+        };
+
+        let currentActiveTab = 'overview';
+        let activeChart = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderMobileNav();
+            switchTab('overview');
+        });
+
+        function renderMobileNav() {
+            const container = document.getElementById('mobile-nav-container');
+            container.innerHTML = `
+                <div class="px-3 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">核心導覽</div>
+                <button onclick="switchTab('overview'); toggleMobileMenu();" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium ${currentActiveTab === 'overview' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>總覽與績效比較</span>
+                </button>
+                <div class="pt-3 px-3 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">10檔專屬面板</div>
+                ${Object.keys(stockData).map(key => `
+                    <button onclick="switchTab('${key}'); toggleMobileMenu();" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium ${currentActiveTab === key ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}">
+                        <span>${key}${stockData[key].name.substring(0, 8)}...</span>
+                        <span class="text-xs px-1.5 py-0.5 rounded ${stockData[key].type === 'leveraged' ? 'bg-amber-500/20 text-amber-300' : stockData[key].type === 'active' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-blue-500/20 text-blue-300'}">${stockData[key].category}</span>
+                    </button>
+                `).join('')}
+            `;
+            lucide.createIcons();
         }
 
-        function renderNav() {
-            const navContainer = document.getElementById('etf-nav-list');
+        function toggleMobileMenu() {
+            document.getElementById('mobile-drawer').classList.toggle('hidden');
+        }
+
+        function switchTab(tabId) {
+            currentActiveTab = tabId;
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = "nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800/80 transition-all";
+            });
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                if (tabId === 'overview') {
+                    activeBtn.className = "nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all bg-blue-600 text-white shadow-md shadow-blue-600/20";
+                } else {
+                    activeBtn.className = "nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all";
+                }
+            }
+
+            if (tabId === 'overview') {
+                document.getElementById('current-page-title').innerText = '總覽與績效比較面板';
+                document.getElementById('current-page-subtitle').innerText = '十檔焦點主動式ETF與正二槓桿基金多維度追蹤';
+                renderOverviewPage();
+            } else {
+                const stock = stockData[tabId];
+                document.getElementById('current-page-title').innerText = `${stock.code} ${stock.name}`;
+                document.getElementById('current-page-subtitle').innerText = `即時走勢、持股解析與回測分析 (${stock.category})`;
+                renderStockDetailPage(tabId);
+            }
+            renderMobileNav();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 2500);
+        }
+
+        function refreshData() {
+            showToast('已重新同步最新盤中報價與淨值資料');
+            if (currentActiveTab === 'overview') { renderOverviewPage(); } else { renderStockDetailPage(currentActiveTab); }
+        }
+
+        function handleSearch(query) {
+            if (!query) return;
+            const q = query.toUpperCase().trim();
+            const found = Object.keys(stockData).find(k => k.includes(q) || stockData[k].name.includes(q));
+            if (found) { switchTab(found); }
+        }
+
+        function renderOverviewPage() {
+            const viewport = document.getElementById('main-viewport');
             let html = `
-                <button onclick="switchTab('overview')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition ${currentTab === 'overview' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/30' : 'text-slate-300 hover:bg-slate-800'}">
-                    <i class="fa-solid fa-house-chimney mr-2"></i> 五檔主動與績效總覽
-                </button>
-                <div class="pt-2 pb-1 text-xs text-slate-500 uppercase font-bold px-2">追蹤標的</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-cardbg border border-bordercolor p-5 rounded-2xl shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">追蹤標的總數</p><h3 class="text-2xl font-bold text-white mt-1">10 檔</h3></div>
+                            <div class="p-3 bg-blue-500/10 rounded-xl text-blue-400"><i data-lucide="layers" class="w-6 h-6"></i></div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3"><span class="text-emerald-400 font-semibold">5檔主動</span> + <span class="text-amber-400 font-semibold">4檔正二</span> + <span class="text-blue-400 font-semibold">1檔市值</span></p>
+                    </div>
+                    <div class="bg-cardbg border border-bordercolor p-5 rounded-2xl shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">槓桿ETF平均YTD</p><h3 class="text-2xl font-bold text-emerald-400 mt-1">+47.4%</h3></div>
+                            <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3">正二雙倍複利爆發力強勁</p>
+                    </div>
+                    <div class="bg-cardbg border border-bordercolor p-5 rounded-2xl shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">主動式ETF平均YTD</p><h3 class="text-2xl font-bold text-emerald-400 mt-1">+25.8%</h3></div>
+                            <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><i data-lucide="zap" class="w-6 h-6"></i></div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3">經理人主動選股超越大盤</p>
+                    </div>
+                    <div class="bg-cardbg border border-bordercolor p-5 rounded-2xl shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <div><p class="text-xs font-semibold text-slate-400 uppercase">市場總規模估算</p><h3 class="text-2xl font-bold text-white mt-1">~ 4,150 億</h3></div>
+                            <div class="p-3 bg-purple-500/10 rounded-xl text-purple-400"><i data-lucide="pie-chart" class="w-6 h-6"></i></div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3">資金持續湧入台股創新商品</p>
+                    </div>
+                </div>
+
+                <div class="bg-cardbg border border-bordercolor p-6 rounded-2xl shadow-lg">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 mb-4 border-b border-bordercolor gap-3">
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                                <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i>
+                                <span>10檔標的今年至今 (YTD) 績效長條比較圖</span>
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5">直觀比較正二槓桿ETF與主動式ETF、市值型標竿的報酬爆發力</p>
+                        </div>
+                        <div class="flex items-center space-x-2 text-xs">
+                            <span class="text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">■ 正二槓桿 (2x)</span>
+                            <span class="text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">■ 主動式ETF</span>
+                            <span class="text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20">■ 市值標竿</span>
+                        </div>
+                    </div>
+                    <div class="relative h-72 w-full"><canvas id="overviewComparisonChart"></canvas></div>
+                </div>
+
+                <div class="bg-cardbg border border-bordercolor rounded-2xl shadow-lg overflow-hidden">
+                    <div class="p-5 border-b border-bordercolor">
+                        <h3 class="font-bold text-white text-base">十檔核心焦點標的全覽表</h3>
+                        <p class="text-xs text-slate-400">點擊任一標的可直接進入專屬面板檢視詳細持股變動與歷史K線</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase border-b border-bordercolor">
+                                    <th class="py-3 px-4">代號與名稱</th>
+                                    <th class="py-3 px-4">資產類型</th>
+                                    <th class="py-3 px-4 text-right">即時價格</th>
+                                    <th class="py-3 px-4 text-right">漲跌幅</th>
+                                    <th class="py-3 px-4 text-right">今年YTD</th>
+                                    <th class="py-3 px-4 text-right">回測1年</th>
+                                    <th class="py-3 px-4 text-right">規模</th>
+                                    <th class="py-3 px-4 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-bordercolor text-sm">
             `;
 
-            globalData.etfs.forEach(etf => {
-                const isActive = currentTab === etf.code;
+            for (const [key, item] of Object.entries(stockData)) {
+                const isPos = item.change >= 0;
+                const badgeColor = item.type === 'leveraged' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : item.type === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20';
                 html += `
-                    <button onclick="switchTab('${etf.code}')" class="w-full flex justify-between items-center px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-emerald-600 text-white font-bold shadow-md' : 'text-slate-300 hover:bg-slate-800'}">
-                        <span>${etf.code} ${etf.name.substring(0, 8)}...</span>
-                        <span class="text-xs px-1.5 py-0.5 rounded ${etf.ytd >= 0 ? 'bg-emerald-900/60 text-emerald-300' : 'bg-rose-900/60 text-rose-300'}">${etf.ytd > 0 ? '+' : ''}${etf.ytd}%</span>
-                    </button>
+                    <tr class="hover:bg-slate-800/50 transition-all cursor-pointer" onclick="switchTab('${key}')">
+                        <td class="py-3.5 px-4"><div class="font-bold text-white flex items-center space-x-2"><span class="text-blue-400">${item.code}</span><span class="text-slate-300">${item.name}</span></div></td>
+                        <td class="py-3.5 px-4"><span class="text-xs px-2 py-0.5 rounded border ${badgeColor}">${item.category}</span></td>
+                        <td class="py-3.5 px-4 text-right font-mono font-semibold text-white">${item.price.toFixed(2)}</td>
+                        <td class="py-3.5 px-4 text-right font-mono font-semibold ${isPos ? 'text-emerald-400' : 'text-red-400'}">${isPos ? '+' : ''}${item.changePercent.toFixed(2)}%</td>
+                        <td class="py-3.5 px-4 text-right font-mono font-semibold text-emerald-400">${item.ytdReturn}</td>
+                        <td class="py-3.5 px-4 text-right font-mono text-slate-300">${item.ret1Y}</td>
+                        <td class="py-3.5 px-4 text-right text-slate-400 text-xs">${item.scale}</td>
+                        <td class="py-3.5 px-4 text-center"><button onclick="event.stopPropagation(); switchTab('${key}');" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium">查看專屬面板</button></td>
+                    </tr>
                 `;
-            });
-            navContainer.innerHTML = html;
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            renderNav();
-            renderContent();
-        }
-
-        function renderContent() {
-            const main = document.getElementById('main-content');
-            if (currentTab === 'overview') {
-                main.innerHTML = `
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                        <h2 class="text-xl font-bold mb-4 flex items-center"><i class="fa-solid fa-trophy text-amber-400 mr-2"></i> 10大焦點 ETF 績效與規模總覽</h2>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-slate-800 text-slate-400 uppercase text-xs">
-                                    <tr>
-                                        <th class="p-3">代號/名稱</th>
-                                        <th class="p-3">類型</th>
-                                        <th class="p-3 text-right">股價</th>
-                                        <th class="p-3 text-right">今年至今(YTD)</th>
-                                        <th class="p-3 text-right">回測1年</th>
-                                        <th class="p-3 text-right">規模(億)</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-800">
-                                    ${globalData.etfs.map(e => `
-                                        <tr class="hover:bg-slate-800/50 cursor-pointer" onclick="switchTab('${e.code}')">
-                                            <td class="p-3 font-bold text-emerald-400">${e.code} <span class="text-slate-300 font-normal">${e.name}</span></td>
-                                            <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-slate-800 text-slate-300">${e.category}</span></td>
-                                            <td class="p-3 text-right">${e.price}</td>
-                                            <td class="p-3 text-right font-semibold ${e.ytd >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${e.ytd > 0 ? '+' : ''}${e.ytd}%</td>
-                                            <td class="p-3 text-right ${e.return_1y >= 0 ? 'text-emerald-400' : 'text-rose-400'}">+${e.return_1y}%</td>
-                                            <td class="p-3 text-right text-slate-400">${e.scale}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-            } else {
-                const etf = globalData.etfs.find(e => e.code === currentTab);
-                if (!etf) return;
-
-                main.innerHTML = `
-                    <div class="space-y-6">
-                        <!-- 標題資訊卡 -->
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div>
-                                <div class="flex items-center space-x-3">
-                                    <span class="text-2xl font-black text-emerald-400">${etf.code}</span>
-                                    <h2 class="text-xl font-bold">${etf.name}</h2>
-                                    <span class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-300">${etf.category}</span>
-                                </div>
-                                <p class="text-sm text-slate-400 mt-1">即時追蹤面板與持股變化分析</p>
-                            </div>
-                            <div class="flex items-center space-x-4">
-                                <div class="text-right">
-                                    <div class="text-2xl font-bold">${etf.price} <span class="text-xs text-emerald-400 font-normal">(+${etf.change})</span></div>
-                                    <div class="text-xs text-slate-400">目前股價 / 淨值</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- K線與走勢圖 -->
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                            <h3 class="text-md font-bold mb-4 flex items-center"><i class="fa-solid fa-chart-area text-blue-400 mr-2"></i> 淨值與走勢互動圖表</h3>
-                            <div class="h-64 w-full">
-                                <canvas id="etfChart"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- 持股變動與摘要 -->
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                            <h3 class="text-md font-bold mb-4 flex items-center"><i class="fa-solid fa-list-check text-emerald-400 mr-2"></i> 最新持股增減與連續買賣紀錄</h3>
-                            ${etf.holdings_change && etf.holdings_change.length > 0 ? `
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-left text-sm">
-                                        <thead class="bg-slate-800 text-slate-400 text-xs">
-                                            <tr>
-                                                <th class="p-3">股票標的</th>
-                                                <th class="p-3">動作</th>
-                                                <th class="p-3">變動股數</th>
-                                                <th class="p-3">連續天數狀態</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-800">
-                                            ${etf.holdings_change.map(h => `
-                                                <tr>
-                                                    <td class="p-3 font-semibold">${h.stock}</td>
-                                                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs ${h.action === '加碼' ? 'bg-emerald-900 text-emerald-300' : 'bg-rose-900 text-rose-300'}">${h.action}</span></td>
-                                                    <td class="p-3">${h.shares}</td>
-                                                    <td class="p-3 text-amber-400 font-medium">${h.days}</td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ` : `<p class="text-sm text-slate-400">今日尚無重大持股增減變动或為非主動式配置標的。</p>`}
-                        </div>
-                    </div>
-                `;
-                renderChart();
             }
-        }
+            html += `</tbody></table></div></div>`;
+            viewport.innerHTML = html;
+            lucide.createIcons();
 
-        function renderChart() {
-            const ctx = document.getElementById('etfChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('overviewComparisonChart').getContext('2d');
+            if (activeChart) activeChart.destroy();
+            const labels = Object.keys(stockData);
+            const dataValues = labels.map(k => parseFloat(stockData[k].ytdReturn.replace('+', '').replace('%', '')));
+            const bgColors = labels.map(k => stockData[k].type === 'leveraged' ? 'rgba(245, 158, 11, 0.8)' : stockData[k].type === 'active' ? 'rgba(16, 185, 129, 0.8)' : 'rgba(59, 130, 246, 0.8)');
 
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['5天前', '4天前', '3天前', '2天前', '昨日', '今日'],
-                    datasets: [{
-                        label: '走勢淨值',
-                        data: [27.2, 27.5, 27.8, 28.1, 28.2, 28.5],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
+            activeChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ data: dataValues, backgroundColor: bgColors, borderRadius: 8 }] },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
-                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+                        y: { grid: { color: 'rgba(51, 65, 85, 0.4)' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     }
                 }
             });
         }
 
-        loadData();
+        function renderStockDetailPage(symbol) {
+            const stock = stockData[symbol];
+            const viewport = document.getElementById('main-viewport');
+            const isPos = stock.change >= 0;
+            const isLeveraged = stock.type === 'leveraged';
+            const isActive = stock.type === 'active';
+
+            let html = `
+                <div class="bg-cardbg border border-bordercolor p-6 rounded-2xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center space-x-3">
+                            <h2 class="text-2xl font-bold text-white">${stock.code} ${stock.name}</h2>
+                            <span class="text-xs px-2.5 py-1 rounded-lg border ${isLeveraged ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}">${stock.category}</span>
+                        </div>
+                        <p class="text-sm text-slate-400 mt-1">${stock.description}</p>
+                    </div>
+                    <div class="flex items-center space-x-6 bg-slate-900/60 px-5 py-3 rounded-xl border border-bordercolor w-full md:w-auto justify-between">
+                        <div><p class="text-xs text-slate-400">即時價格</p><p class="text-2xl font-mono font-bold text-white">${stock.price.toFixed(2)}</p></div>
+                        <div class="text-right"><p class="text-xs text-slate-400">漲跌幅</p><p class="text-lg font-mono font-bold ${isPos ? 'text-emerald-400' : 'text-red-400'}">${isPos ? '+' : ''}${stock.change.toFixed(2)} (${isPos ? '+' : ''}${stock.changePercent.toFixed(2)}%)</p></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-cardbg border border-bordercolor p-4 rounded-xl"><p class="text-xs text-slate-400">最新估計淨值 (NAV)</p><p class="text-xl font-mono font-bold text-white mt-1">${stock.nav.toFixed(2)}</p></div>
+                    <div class="bg-cardbg border border-bordercolor p-4 rounded-xl"><p class="text-xs text-slate-400">成交張數</p><p class="text-xl font-mono font-bold text-white mt-1">${stock.volume}</p></div>
+                    <div class="bg-cardbg border border-bordercolor p-4 rounded-xl"><p class="text-xs text-slate-400">基金規模</p><p class="text-xl font-mono font-bold text-white mt-1">${stock.scale}</p></div>
+                    <div class="bg-cardbg border border-bordercolor p-4 rounded-xl"><p class="text-xs text-slate-400">今年至今 (YTD) 績效</p><p class="text-xl font-mono font-bold text-emerald-400 mt-1">${stock.ytdReturn}</p></div>
+                </div>
+            `;
+
+            if (isLeveraged && stock.leverageInfo) {
+                html += `
+                    <div class="bg-gradient-to-r from-amber-950/40 to-slate-900 border border-amber-500/30 p-5 rounded-2xl shadow-lg">
+                        <div class="flex items-center space-x-2 text-amber-400 font-bold mb-2"><i data-lucide="zap" class="w-5 h-5"></i><span>${stock.code} 槓桿與期貨追蹤特性說明</span></div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-3">
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-bordercolor"><span class="text-xs text-slate-400 block">槓桿倍數</span><span class="text-white font-semibold mt-1 block">${stock.leverageInfo.multiplier}</span></div>
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-bordercolor"><span class="text-xs text-slate-400 block">追蹤指數與期貨標的</span><span class="text-white font-semibold mt-1 block">${stock.leverageInfo.trackingIndex}</span></div>
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-bordercolor"><span class="text-xs text-slate-400 block">複利與維持率特性</span><span class="text-white font-semibold mt-1 block">${stock.leverageInfo.futuresMarginRatio}</span></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="bg-cardbg border border-bordercolor p-6 rounded-2xl shadow-lg">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 mb-4 border-b border-bordercolor gap-3">
+                        <div><h3 class="font-bold text-white text-base">互動式技術分析走勢圖</h3><p class="text-xs text-slate-400">支援歷史區間切換與高精度互動回測</p></div>
+                        <div class="flex items-center space-x-1 bg-slate-900 p-1 rounded-xl border border-bordercolor">
+                            <button onclick="changeTimeframe('${symbol}', '1M')" id="btn-1M" class="px-3 py-1 rounded-lg text-xs font-medium text-slate-300">1M</button>
+                            <button onclick="changeTimeframe('${symbol}', '3M')" id="btn-3M" class="px-3 py-1 rounded-lg text-xs font-medium text-slate-300">3M</button>
+                            <button onclick="changeTimeframe('${symbol}', '1Y')" id="btn-1Y" class="px-3 py-1 rounded-lg text-xs font-medium bg-blue-600 text-white">1Y</button>
+                            <button onclick="changeTimeframe('${symbol}', 'ALL')" id="btn-ALL" class="px-3 py-1 rounded-lg text-xs font-medium text-slate-300">ALL</button>
+                        </div>
+                    </div>
+                    <div class="relative h-80 w-full"><canvas id="stockDetailChart"></canvas></div>
+                </div>
+
+                <div class="bg-cardbg border border-bordercolor rounded-2xl shadow-lg overflow-hidden">
+                    <div class="p-5 border-b border-bordercolor">
+                        <h3 class="font-bold text-white text-base">${isActive ? '主動式ETF持股與動態變動紀錄' : '期貨合約部位與資產配置追蹤'}</h3>
+                        <p class="text-xs text-slate-400">即時追蹤核心配置與操作動向</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase border-b border-bordercolor">
+                                    <th class="py-3 px-4">${isActive ? '持股代號與名稱' : '期貨/資產代號'}</th>
+                                    <th class="py-3 px-4">${isActive ? '持股張數/權重' : '部位說明'}</th>
+                                    <th class="py-3 px-4">權重比例</th>
+                                    <th class="py-3 px-4">變動狀態</th>
+                                    <th class="py-3 px-4">連續天數</th>
+                                    <th class="py-3 px-4">操作紀錄</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-bordercolor text-sm">
+            `;
+
+            stock.holdings.forEach(h => {
+                let badge = 'bg-slate-800 text-slate-300 border-slate-700';
+                if (h.changeState === '加碼') badge = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                if (h.changeState === '減碼') badge = 'bg-red-500/10 text-red-400 border-red-500/20';
+                if (h.changeState === '新納入') badge = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+
+                html += `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="py-3.5 px-4 font-bold text-white"><span class="text-blue-400 mr-2">${h.symbol}</span>${h.name}</td>
+                        <td class="py-3.5 px-4 font-mono text-slate-300">${h.shares}</td>
+                        <td class="py-3.5 px-4 font-mono font-semibold text-white">${h.weight}</td>
+                        <td class="py-3.5 px-4"><span class="text-xs px-2 py-0.5 rounded border ${badge}">${h.changeState}</span></td>
+                        <td class="py-3.5 px-4 font-mono text-slate-300">${h.streak > 0 ? h.streak + ' 天' : '-'}</td>
+                        <td class="py-3.5 px-4 text-slate-400 text-xs">${h.actionLog}</td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table></div></div>`;
+            viewport.innerHTML = html;
+            lucide.createIcons();
+            renderStockChart(symbol, '1Y');
+        }
+
+        function changeTimeframe(symbol, timeframe) {
+            ['1M', '3M', '1Y', 'ALL'].forEach(tf => {
+                const btn = document.getElementById(`btn-${tf}`);
+                if (btn) btn.className = tf === timeframe ? "px-3 py-1 rounded-lg text-xs font-medium bg-blue-600 text-white shadow" : "px-3 py-1 rounded-lg text-xs font-medium text-slate-300";
+            });
+            renderStockChart(symbol, timeframe);
+        }
+
+        function renderStockChart(symbol, timeframe) {
+            const stock = stockData[symbol];
+            const ctx = document.getElementById('stockDetailChart').getContext('2d');
+            if (activeChart) activeChart.destroy();
+
+            let labels = stock.chartData.labels;
+            let prices = stock.chartData.prices;
+            if (timeframe === '1M') { labels = labels.slice(-3); prices = prices.slice(-3); }
+            else if (timeframe === '3M') { labels = labels.slice(-6); prices = prices.slice(-6); }
+
+            activeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: prices, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3, fill: true, tension: 0.3, pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(51, 65, 85, 0.4)' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
