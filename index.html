@@ -135,16 +135,23 @@
 
     <script>
         let globalData = null;
-        let currentTab = 'overview';
+        let currentTab = 'active-summary';
         let activeChart = null;
 
         async function loadDataAndRefresh() {
             try {
                 const response = await fetch('etf_data.json?' + new Date().getTime());
+                if (!response.ok) throw new Error('無法取得 JSON 檔案');
                 globalData = await response.json();
                 switchTab(currentTab);
             } catch (err) {
                 console.error("載入 etf_data.json 失敗", err);
+                document.getElementById('main-viewport').innerHTML = `
+                    <div class="p-8 text-center text-red-400 bg-red-950/20 rounded-2xl border border-red-500/30">
+                        <p class="font-bold text-base">⚠️ 資料載入失敗或 json 格式不正確</p>
+                        <p class="text-xs mt-1 text-slate-400">請檢查專案根目錄的 etf_data.json 檔案。</p>
+                    </div>
+                `;
             }
         }
 
@@ -171,12 +178,12 @@
             } else {
                 renderStockDetailPage(tabId);
             }
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         function renderOverviewPage() {
             const viewport = document.getElementById('main-viewport');
-            if (!globalData) return;
+            if (!globalData || !globalData.etfs) return;
 
             let html = `
                 <div class="bg-cardbg border border-bordercolor rounded-2xl shadow-lg overflow-hidden">
@@ -203,14 +210,17 @@
             `;
 
             globalData.etfs.forEach(item => {
-                const isPos = item.change >= 0;
+                const price = typeof item.price === 'number' ? item.price.toFixed(2) : (item.price || '-');
+                const changePct = typeof item.changePercent === 'number' ? item.changePercent : 0;
+                const isPos = changePct >= 0;
+
                 html += `
                     <tr class="hover:bg-slate-800/50 cursor-pointer" onclick="switchTab('${item.code}')">
-                        <td class="py-3.5 px-4 font-bold text-white"><span class="text-blue-400 mr-2">${item.code}</span>${item.name}</td>
-                        <td class="py-3.5 px-4"><span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">${item.category}</span></td>
-                        <td class="py-3.5 px-4 text-right font-mono font-semibold">${item.price.toFixed(2)}</td>
-                        <td class="py-3.5 px-4 text-right font-mono ${isPos ? 'text-emerald-400' : 'text-red-400'}">${isPos ? '+' : ''}${item.changePercent}%</td>
-                        <td class="py-3.5 px-4 text-right font-mono text-emerald-400">${item.ytdReturn}</td>
+                        <td class="py-3.5 px-4 font-bold text-white"><span class="text-blue-400 mr-2">${item.code}</span>${item.name || ''}</td>
+                        <td class="py-3.5 px-4"><span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">${item.category || 'ETF'}</span></td>
+                        <td class="py-3.5 px-4 text-right font-mono font-semibold">${price}</td>
+                        <td class="py-3.5 px-4 text-right font-mono ${isPos ? 'text-emerald-400' : 'text-red-400'}">${isPos ? '+' : ''}${changePct}%</td>
+                        <td class="py-3.5 px-4 text-right font-mono text-emerald-400">${item.ytdReturn || '-'}</td>
                         <td class="py-3.5 px-4 text-center"><button onclick="event.stopPropagation(); switchTab('${item.code}');" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs">查看面板</button></td>
                     </tr>
                 `;
@@ -219,20 +229,18 @@
             viewport.innerHTML = html;
         }
 
-        // 新增：五檔主動式ETF持股總統計聚合畫面
         function renderActiveSummaryPage() {
             const viewport = document.getElementById('main-viewport');
-            if (!globalData) return;
+            if (!globalData || !globalData.etfs) return;
 
-            // 篩選出 5 檔主動式 ETF (type === 'active')
-            const activeEtfs = globalData.etfs.filter(e => e.type === 'active');
+            const activeEtfs = globalData.etfs.filter(e => e.type === 'active' || (e.code && e.code.endsWith('A')));
 
             let html = `
                 <div class="space-y-6">
                     <div class="bg-cardbg border border-bordercolor p-6 rounded-2xl shadow-lg">
                         <h3 class="text-lg font-bold text-white flex items-center space-x-2">
                             <i data-lucide="pie-chart" class="w-5 h-5 text-emerald-400"></i>
-                            <span>五檔主動式ETF（00981A, 00992A, 00991A, 00994A, 00980A）持股與動態總彙整</span>
+                            <span>五檔主動式ETF持股與動態總彙整</span>
                         </h3>
                         <p class="text-xs text-slate-400 mt-1">完整統計 5 位經理人近期在各成分股上的加碼、減碼、新納入狀態、張數與權重佔比。</p>
                     </div>
@@ -243,75 +251,4 @@
                     <div class="bg-cardbg border border-bordercolor rounded-2xl shadow-lg overflow-hidden">
                         <div class="p-4 bg-slate-900/60 border-b border-bordercolor flex justify-between items-center cursor-pointer" onclick="switchTab('${etf.code}')">
                             <div class="flex items-center space-x-3">
-                                <span class="font-black text-emerald-400 text-lg">${etf.code}</span>
-                                <h4 class="font-bold text-white">${etf.name}</h4>
-                                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">YTD: ${etf.ytdReturn}</span>
-                            </div>
-                            <button class="text-xs text-blue-400 hover:underline">查看完整專屬面板 →</button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-sm">
-                                <thead>
-                                    <tr class="bg-slate-900/30 text-slate-400 text-xs uppercase border-b border-bordercolor">
-                                        <th class="py-2.5 px-4">持股代號與名稱</th>
-                                        <th class="py-2.5 px-4">持股張數</th>
-                                        <th class="py-2.5 px-4">權重比例</th>
-                                        <th class="py-2.5 px-4">變動狀態</th>
-                                        <th class="py-2.5 px-4">連續天數</th>
-                                        <th class="py-2.5 px-4">買賣與調節操作紀錄</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-bordercolor">
-                `;
-
-                if (etf.holdings && etf.holdings.length > 0) {
-                    etf.holdings.forEach(h => {
-                        let badge = 'bg-slate-800 text-slate-300';
-                        if (h.changeState === '加碼') badge = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-                        if (h.changeState === '減碼') badge = 'bg-red-500/10 text-red-400 border border-red-500/20';
-                        if (h.changeState === '新納入') badge = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
-
-                        html += `
-                            <tr class="hover:bg-slate-800/40">
-                                <td class="py-3 px-4 font-bold text-white"><span class="text-blue-400 mr-2">${h.symbol}</span>${h.name}</td>
-                                <td class="py-3 px-4 font-mono text-slate-300">${h.shares || '-'}</td>
-                                <td class="py-3 px-4 font-mono font-semibold text-white">${h.weight || '-'}</td>
-                                <td class="py-3 px-4"><span class="text-xs px-2 py-0.5 rounded ${badge}">${h.changeState}</span></td>
-                                <td class="py-3 px-4 font-mono text-slate-300">${h.streak > 0 ? h.streak + ' 天' : '-'}</td>
-                                <td class="py-3 px-4 text-slate-400 text-xs">${h.actionLog}</td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    html += `<tr><td colspan="6" class="py-4 text-center text-slate-500 text-xs">目前暫無詳細持股細目。</td></tr>`;
-                }
-
-                html += `</tbody></table></div></div>`;
-            });
-
-            html += `</div>`;
-            viewport.innerHTML = html;
-        }
-
-        function renderStockDetailPage(symbol) {
-            const stock = globalData.etfs.find(e => e.code === symbol);
-            const viewport = document.getElementById('main-viewport');
-            if (!stock) return;
-
-            let html = `
-                <div class="bg-cardbg border border-bordercolor p-6 rounded-2xl shadow-lg flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">${stock.code} ${stock.name}</h2>
-                        <p class="text-sm text-slate-400 mt-1">${stock.description}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-2xl font-mono font-bold">${stock.price.toFixed(2)}</p>
-                        <p class="text-xs text-emerald-400">YTD: ${stock.ytdReturn}</p>
-                    </div>
-                </div>
-            `;
-            viewport.innerHTML = html;
-        }
-    </script>
-</body>
-</html>
+                                <span class="font-black text-emerald-400 text-lg">${etf.code}
