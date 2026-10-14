@@ -146,6 +146,12 @@
                 switchTab(currentTab);
             } catch (err) {
                 console.error("載入 etf_data.json 失敗", err);
+                document.getElementById('main-viewport').innerHTML = `
+                    <div class="p-6 bg-red-950/30 border border-red-500/30 rounded-2xl text-red-400">
+                        <p class="font-bold">⚠️ 載入 etf_data.json 發生錯誤</p>
+                        <p class="text-xs text-slate-400 mt-1">詳細錯誤：${err.message}</p>
+                    </div>
+                `;
             }
         }
 
@@ -258,4 +264,205 @@
             activeEtfs.forEach(etf => {
                 html += `
                     <div class="bg-cardbg border border-bordercolor rounded-2xl shadow-lg overflow-hidden">
-                        <div class="p-4 bg-slate-900/60 border-b border-bordercolor
+                        <div class="p-4 bg-slate-900/60 border-b border-bordercolor flex justify-between items-center cursor-pointer" onclick="switchTab('${etf.code}')">
+                            <div class="flex items-center space-x-3">
+                                <span class="font-black text-emerald-400 text-lg">${etf.code}</span>
+                                <h4 class="font-bold text-white">${etf.name || ''}</h4>
+                                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">YTD: ${etf.ytdReturn || '-'}</span>
+                            </div>
+                            <button class="text-xs text-blue-400 hover:underline">查看專屬面板 →</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-900/30 text-slate-400 text-xs uppercase border-b border-bordercolor">
+                                        <th class="py-2.5 px-4">持股代號與名稱</th>
+                                        <th class="py-2.5 px-4">持股張數</th>
+                                        <th class="py-2.5 px-4">權重比例</th>
+                                        <th class="py-2.5 px-4">變動狀態</th>
+                                        <th class="py-2.5 px-4">買賣與調節操作紀錄</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-bordercolor">
+                `;
+
+                if (etf.holdings && Array.isArray(etf.holdings) && etf.holdings.length > 0) {
+                    etf.holdings.forEach(h => {
+                        let badge = 'bg-slate-800 text-slate-300';
+                        if (h.changeState === '加碼') badge = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                        if (h.changeState === '減碼') badge = 'bg-red-500/10 text-red-400 border border-red-500/20';
+                        if (h.changeState === '新納入') badge = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+
+                        html += `
+                            <tr class="hover:bg-slate-800/40">
+                                <td class="py-3 px-4 font-bold text-white"><span class="text-blue-400 mr-2">${h.symbol || ''}</span>${h.name || ''}</td>
+                                <td class="py-3 px-4 font-mono text-slate-300">${h.shares || '-'}</td>
+                                <td class="py-3 px-4 font-mono font-semibold text-white">${h.weight || '-'}</td>
+                                <td class="py-3 px-4"><span class="text-xs px-2 py-0.5 rounded ${badge}">${h.changeState || '持平'}</span></td>
+                                <td class="py-3 px-4 text-slate-400 text-xs">${h.actionLog || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    html += `<tr><td colspan="5" class="py-4 text-center text-slate-500 text-xs">目前暫無詳細持股數據。</td></tr>`;
+                }
+
+                html += `</tbody></table></div></div>`;
+            });
+
+            html += `</div>`;
+            viewport.innerHTML = html;
+        }
+
+        function renderStockDetailPage(symbol) {
+            const stock = globalData.etfs.find(e => e.code === symbol);
+            const viewport = document.getElementById('main-viewport');
+            if (!stock) return;
+
+            document.getElementById('current-page-title').innerText = `${stock.code} ${stock.name}`;
+
+            const price = typeof stock.price === 'number' ? stock.price.toFixed(2) : (stock.price || '-');
+            const changePct = typeof stock.changePercent === 'number' ? stock.changePercent : 0;
+            const isPos = changePct >= 0;
+
+            let html = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-cardbg border border-bordercolor p-6 rounded-2xl shadow-lg space-y-4">
+                            <div>
+                                <span class="text-xs px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 font-semibold">${stock.category}</span>
+                                <h3 class="text-2xl font-bold text-white mt-2">${stock.name}</h3>
+                                <p class="text-xs text-slate-400 mt-1">${stock.description}</p>
+                            </div>
+                            <div class="pt-4 border-t border-bordercolor flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs text-slate-400">即時價格</p>
+                                    <p class="text-3xl font-mono font-bold text-white mt-1">${price}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-slate-400">漲跌幅</p>
+                                    <p class="text-xl font-mono font-bold ${isPos ? 'text-emerald-400' : 'text-red-400'} mt-1">${isPos ? '+' : ''}${changePct}%</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 pt-4 border-t border-bordercolor text-sm">
+                                <div class="bg-slate-900/40 p-3 rounded-xl">
+                                    <p class="text-xs text-slate-400">今年 YTD 報酬</p>
+                                    <p class="font-mono font-bold text-emerald-400 mt-1">${stock.ytdReturn || '-'}</p>
+                                </div>
+                                <div class="bg-slate-900/40 p-3 rounded-xl">
+                                    <p class="text-xs text-slate-400">預估淨值 (NAV)</p>
+                                    <p class="font-mono font-bold text-white mt-1">${stock.nav || price}</p>
+                                </div>
+                            </div>
+                        </div>
+            `;
+
+            if (stock.type === 'leveraged' && stock.leverageInfo) {
+                html += `
+                        <div class="bg-cardbg border border-bordercolor p-6 rounded-2xl shadow-lg space-y-3">
+                            <h4 class="font-bold text-white text-sm flex items-center space-x-2">
+                                <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+                                <span>槓桿與期貨維持率資訊</span>
+                            </h4>
+                            <div class="text-xs space-y-2 text-slate-300">
+                                <div class="flex justify-between py-1 border-b border-bordercolor">
+                                    <span class="text-slate-400">槓桿倍數</span>
+                                    <span class="font-mono font-bold text-amber-400">${stock.leverageInfo.multiplier}</span>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-bordercolor">
+                                    <span class="text-slate-400">追蹤指數</span>
+                                    <span class="font-semibold">${stock.leverageInfo.trackingIndex}</span>
+                                </div>
+                                <div class="flex justify-between py-1">
+                                    <span class="text-slate-400">期貨維持率</span>
+                                    <span class="font-mono text-emerald-400">${stock.leverageInfo.futuresMarginRatio}</span>
+                                </div>
+                            </div>
+                        </div>
+                `;
+            }
+
+            html += `
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-cardbg border border-bordercolor p-6 rounded-2xl shadow-lg">
+                            <h4 class="font-bold text-white mb-4 text-sm flex items-center space-x-2">
+                                <i data-lucide="line-chart" class="w-4 h-4 text-blue-400"></i>
+                                <span>近期價格走勢圖</span>
+                            </h4>
+                            <div class="h-64 relative">
+                                <canvas id="detailChart"></canvas>
+                            </div>
+                        </div>
+            `;
+
+            if (stock.holdings && stock.holdings.length > 0) {
+                html += `
+                        <div class="bg-cardbg border border-bordercolor rounded-2xl shadow-lg overflow-hidden">
+                            <div class="p-5 border-b border-bordercolor">
+                                <h4 class="font-bold text-white text-sm">成分股與經理人操作細目</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase border-b border-bordercolor">
+                                            <th class="py-3 px-4">代號與名稱</th>
+                                            <th class="py-3 px-4">張數</th>
+                                            <th class="py-3 px-4">權重</th>
+                                            <th class="py-3 px-4">狀態</th>
+                                            <th class="py-3 px-4">操作紀錄</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-bordercolor">
+                `;
+                stock.holdings.forEach(h => {
+                    html += `
+                        <tr class="hover:bg-slate-800/40">
+                            <td class="py-3 px-4 font-bold text-white"><span class="text-blue-400 mr-2">${h.symbol}</span>${h.name}</td>
+                            <td class="py-3 px-4 font-mono text-slate-300">${h.shares || '-'}</td>
+                            <td class="py-3 px-4 font-mono font-semibold text-white">${h.weight || '-'}</td>
+                            <td class="py-3 px-4"><span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">${h.changeState || '持平'}</span></td>
+                            <td class="py-3 px-4 text-slate-400 text-xs">${h.actionLog || '-'}</td>
+                        </tr>
+                    `;
+                });
+                html += `</tbody></table></div></div>`;
+            }
+
+            html += `</div></div>`;
+            viewport.innerHTML = html;
+
+            setTimeout(() => {
+                const ctx = document.getElementById('detailChart');
+                if (ctx && stock.chartData) {
+                    if (activeChart) activeChart.destroy();
+                    activeChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: stock.chartData.labels,
+                            datasets: [{
+                                label: stock.name + ' 收盤價',
+                                data: stock.chartData.prices,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                                y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                            }
+                        }
+                    });
+                }
+            }, 50);
+        }
+    </script>
+</body>
+</html>
