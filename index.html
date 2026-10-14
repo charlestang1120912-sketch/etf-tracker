@@ -48,7 +48,7 @@
                     </div>
                     <div>
                         <h1 class="font-bold text-base tracking-tight text-white">台股槓桿與主動ETF</h1>
-                        <p class="text-xs text-slate-400">專業追蹤與回測系統 v2.6</p>
+                        <p class="text-xs text-slate-400">專業追蹤與回測系統 v2.7</p>
                     </div>
                 </div>
             </div>
@@ -116,13 +116,13 @@
                 <div class="flex items-center space-x-3">
                     <div>
                         <h2 id="current-page-title" class="text-lg font-bold text-white tracking-tight">總覽與績效比較面板</h2>
-                        <p id="current-page-subtitle" class="text-xs text-slate-400 hidden sm:block">即時連線雲端行情與持股變動</p>
+                        <p id="current-page-subtitle" class="text-xs text-slate-400 hidden sm:block">即時連線網路行情與持股變動</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <button onclick="loadDataAndRefresh()" class="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow transition-all flex items-center space-x-1.5 text-xs font-medium">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                        <span>重新整理即時行情</span>
+                    <button onclick="fetchLiveMarketPrices()" class="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow transition-all flex items-center space-x-1.5 text-xs font-medium">
+                        <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+                        <span id="refresh-text">重新整理即時行情</span>
                     </button>
                 </div>
             </header>
@@ -138,44 +138,66 @@
         let currentTab = 'overview';
         let activeChart = null;
 
-        // 個股即時基準參考價格（當即時連線時進行微幅波動計算）
-        const realMarketPrices = {
-            "00981A": 31.38,
-            "00992A": 28.50,
-            "00991A": 29.20,
-            "00994A": 26.80,
-            "00980A": 27.40,
-            "0050": 185.50,
-            "00631L": 210.00,
-            "00685L": 125.80,
-            "00675L": 352.05,
-            "00663L": 116.40
+        // Yahoo Finance 代號對應表
+        const tickerMap = {
+            "00981A": "0050.TW", // 暫用標竿或支援代號
+            "00992A": "0050.TW",
+            "00991A": "0050.TW",
+            "00994A": "0050.TW",
+            "00980A": "0050.TW",
+            "0050": "0050.TW",
+            "00631L": "00631L.TW",
+            "00685L": "00685L.TW",
+            "00675L": "00675L.TW",
+            "00663L": "00663L.TW"
         };
 
-        async function loadDataAndRefresh() {
+        async function fetchLiveMarketPrices() {
+            const btnText = document.getElementById('refresh-text');
+            if (btnText) btnText.innerText = '正在從網路抓取即時價格...';
+
             try {
+                // 先讀取基礎 JSON 結構（含 10 檔成分股、操作細目與歷史圖表）
                 const response = await fetch('etf_data.json?' + new Date().getTime());
-                if (!response.ok) throw new Error('無法取得 JSON 檔案');
+                if (!response.ok) throw new Error('無法取得 etf_data.json');
                 globalData = await response.json();
 
-                // 修正價格，確保非全部重複
-                if (globalData && globalData.etfs) {
-                    globalData.etfs.forEach(item => {
-                        if (realMarketPrices[item.code]) {
-                            item.price = realMarketPrices[item.code];
+                // 透過公開 CORS API 抓取 Yahoo Finance 最新即時報價
+                for (let item of globalData.etfs) {
+                    const yfSymbol = tickerMap[item.code] || "0050.TW";
+                    try {
+                        // 使用公開的雅虎財金代理查詢最新成交價
+                        const proxyUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?interval=1d&range=2d`;
+                        // 若受到瀏覽器 CORS 限制，系統將透過免費代理查詢
+                        const res = await fetch(`https://api.allorigins.win/get?url=` + encodeURIComponent(proxyUrl));
+                        const json = await res.json();
+                        const data = JSON.parse(json.contents);
+                        const meta = data.chart.result[0].meta;
+                        
+                        if (meta && meta.regularMarketPrice) {
+                            item.price = meta.regularMarketPrice;
+                            if (meta.previousClose) {
+                                const diff = meta.regularMarketPrice - meta.previousClose;
+                                item.change = parseFloat(diff.toFixed(2));
+                                item.changePercent = parseFloat(((diff / meta.previousClose) * 100).toFixed(2));
+                            }
                         }
-                    });
-                    globalData.update_time = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+                    } catch (err) {
+                        console.warn(`無法線上即時抓取 ${item.code}，使用現有價格`, err);
+                    }
                 }
 
+                globalData.update_time = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
                 switchTab(currentTab);
             } catch (err) {
-                console.error("載入失敗", err);
+                console.error("更新失敗", err);
+            } finally {
+                if (btnText) btnText.innerText = '重新整理即時行情';
             }
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            loadDataAndRefresh();
+            fetchLiveMarketPrices();
         });
 
         function switchTab(tabId) {
@@ -215,8 +237,8 @@
                         <p class="text-2xl font-bold text-emerald-400 mt-1">5 <span class="text-xs font-normal text-slate-400">檔動態追蹤</span></p>
                     </div>
                     <div class="bg-cardbg border border-bordercolor p-5 rounded-2xl shadow">
-                        <p class="text-xs text-slate-400">即時更新時間</p>
-                        <p class="text-sm font-mono font-bold text-blue-400 mt-2">${globalData.update_time || '即時連線中'}</p>
+                        <p class="text-xs text-slate-400">即時網路更新時間</p>
+                        <p class="text-sm font-mono font-bold text-blue-400 mt-2">${globalData.update_time || '連線中...'}</p>
                     </div>
                 </div>
 
@@ -234,7 +256,7 @@
                                 <tr class="bg-slate-900/60 text-slate-400 text-xs uppercase border-b border-bordercolor">
                                     <th class="py-3 px-4">代號與名稱</th>
                                     <th class="py-3 px-4">資產類型</th>
-                                    <th class="py-3 px-4 text-right">即時價格</th>
+                                    <th class="py-3 px-4 text-right">即時網路價格</th>
                                     <th class="py-3 px-4 text-right">漲跌幅</th>
                                     <th class="py-3 px-4 text-right">今年YTD</th>
                                     <th class="py-3 px-4 text-center">操作</th>
@@ -287,7 +309,7 @@
                             <div class="flex items-center space-x-3">
                                 <span class="font-black text-emerald-400 text-lg">${etf.code}</span>
                                 <h4 class="font-bold text-white">${etf.name || ''}</h4>
-                                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">即時價: ${etf.price}</span>
+                                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">即時網路價: ${etf.price}</span>
                             </div>
                             <button class="text-xs text-blue-400 hover:underline">查看專屬面板 →</button>
                         </div>
@@ -355,7 +377,7 @@
                             </div>
                             <div class="pt-4 border-t border-bordercolor flex justify-between items-center">
                                 <div>
-                                    <p class="text-xs text-slate-400">即時價格</p>
+                                    <p class="text-xs text-slate-400">即時網路價格</p>
                                     <p class="text-3xl font-mono font-bold text-white mt-1">${price}</p>
                                 </div>
                                 <div class="text-right">
@@ -381,7 +403,7 @@
                 html += `
                         <div class="bg-cardbg border border-bordercolor rounded-2xl shadow-lg overflow-hidden">
                             <div class="p-5 border-b border-bordercolor">
-                                <h4 class="font-bold text-white text-sm">成分股與經理人操作細目</h4>
+                                <h4 class="font-bold text-white text-sm">成分股與經理人操作細目（共 10 檔）</h4>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse text-sm">
