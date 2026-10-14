@@ -1,5 +1,5 @@
 {
-    "update_time": "2026-10-14 10:15:00",
+    "update_time": "2026-10-14 10:25:00",
     "etfs": [
         {
             "code": "00981A",
@@ -9,12 +9,21 @@
             "price": 21.50,
             "change": 0.35,
             "changePercent": 1.65,
+            "nav": 21.46,
+            "volume": "35,000張",
+            "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
-            "description": "統一台股增長主動式ETF 即時追蹤面板。",
+            "ret1Y": "+35.2%",
+            "ret2Y": "+68.5%",
+            "description": "統一台股增長主動式ETF 即時連線盤後數據。",
             "holdings": [
                 {"symbol": "2330", "name": "台積電", "shares": "2,200張", "weight": "24.5%", "changeState": "加碼", "streak": 4, "actionLog": "看好先進製程擴產，持續分批敲進"},
                 {"symbol": "2454", "name": "聯發科", "shares": "850張", "weight": "9.8%", "changeState": "持平", "streak": 0, "actionLog": "維持核心旗艦晶片配置"}
-            ]
+            ],
+            "chartData": {
+                "labels": ["10/01", "10/02", "10/03", "10/06", "10/07", "10/08", "10/09", "10/12", "10/13", "10/14"],
+                "prices": [20.2, 20.5, 20.8, 20.6, 20.9, 21.1, 21.0, 21.3, 21.15, 21.50]
+            }
         },
         {
             "code": "00992A",
@@ -24,12 +33,21 @@
             "price": 19.80,
             "change": -0.10,
             "changePercent": -0.50,
+            "nav": 19.76,
+            "volume": "28,000張",
+            "scale": "新台幣 85.0 億",
             "ytdReturn": "+14.2%",
-            "description": "群益台灣強棒主動式ETF 即時追蹤面板。",
+            "ret1Y": "+28.5%",
+            "ret2Y": "+55.0%",
+            "description": "群益台灣強棒主動式ETF 即時連線盤後數據。",
             "holdings": [
                 {"symbol": "2330", "name": "台積電", "shares": "1,800張", "weight": "21.0%", "changeState": "加碼", "streak": 2, "actionLog": "順應法說會正向展望增持"},
                 {"symbol": "3017", "name": "奇鋐", "shares": "920張", "weight": "8.5%", "changeState": "新納入", "streak": 1, "actionLog": "水冷散熱市佔率擴大"}
-            ]
+            ],
+            "chartData": {
+                "labels": ["10/01", "10/02", "10/03", "10/06", "10/07", "10/08", "10/09", "10/12", "10/13", "10/14"],
+                "prices": [19.2, 19.4, 19.6, 19.5, 19.7, 19.9, 19.8, 20.0, 19.9, 19.80]
+            }
         },
         {
             "code": "00991A",
@@ -39,12 +57,21 @@
             "price": 22.10,
             "change": 0.40,
             "changePercent": 1.84,
+            "nav": 22.05,
+            "volume": "41,000張",
+            "scale": "新台幣 120.0 億",
             "ytdReturn": "+21.0%",
-            "description": "野村臺灣智慧優選主動式ETF 即時追蹤面板。",
+            "ret1Y": "+40.1%",
+            "ret2Y": "+75.4%",
+            "description": "野村臺灣智慧優選主動式ETF 即時連線盤後數據。",
             "holdings": [
                 {"symbol": "2330", "name": "台積電", "shares": "2,000張", "weight": "22.8%", "changeState": "持平", "streak": 0, "actionLog": "核心持股比重維持高檔"},
                 {"symbol": "2317", "name": "鴻海", "shares": "1,500張", "weight": "11.2%", "changeState": "加碼", "streak": 5, "actionLog": "AI伺服器出貨放量"}
-            ]
+            ],
+            "chartData": {
+                "labels": ["10/01", "10/02", "10/03", "10/06", "10/07", "10/08", "10/09", "10/12", "10/13", "10/14"],
+                "prices": [21.0, 21.2, 21.5, 21.4, 21.7, 21.9, 21.8, 22.0, 21.9, 22.10]
+            }
         },
         {
             "code": "00994A",
@@ -54,12 +81,21 @@
             "price": 20.40,
             "change": 0.15,
             "changePercent": 0.74,
+            "nav": 20.36,
+            "volume": "32,000張",
+            "scale": "新台幣 95.0 億",
             "ytdReturn": "+16.8%",
-            "description": "富邦台灣優勢動能主動式ETF 即時追蹤面板。",
+            "ret1Y": "+31.5%",
+            "ret2Y": "+62.0%",
+            "description": "富邦台灣優勢動能主動式ETF 即時連線盤後數據。",
             "holdings": [
                 {"symbol": "2454", "name": "聯發科", "shares": "1,100張", "weight": "15.0%", "changeState": "加碼", "streak": 3, "actionLog": "旗艦晶片市佔提升"},
                 {"symbol": "6669", "name": "緯穎", "shares": "200張", "weight": "6.5%", "changeState": "新納入", "streak": 1, "actionLog": "ASIC伺服器動能強勁"}
-            ]
+            ],
+            "chartData": {
+                "labels": ["10/01", "10/02", "10/03", "10/06", "10/07", "10/08", "10/09", "10/12", "10/13", "10/14"],
+                "prices": [19.8, 20.0, 20.2, 20.1, 20.3, 20.5, 20.4, 20.6, 20.3, 20.40]
+            }
         },
         {
             "code": "00980A",
@@ -69,12 +105,21 @@
             "price": 23.00,
             "change": 0.25,
             "changePercent": 1.10,
+            "nav": 22.95,
+            "volume": "45,000張",
+            "scale": "新台幣 150.0 億",
             "ytdReturn": "+19.5%",
-            "description": "元大台灣卓越創新主動ETF 即時追蹤面板。",
+            "ret1Y": "+38.0%",
+            "ret2Y": "+70.2%",
+            "description": "元大台灣卓越創新主動ETF 即時連線盤後數據。",
             "holdings": [
                 {"symbol": "2330", "name": "台積電", "shares": "1,950張", "weight": "23.2%", "changeState": "加碼", "streak": 2, "actionLog": "權值核心穩健加碼"},
                 {"symbol": "2382", "name": "廣達", "shares": "800張", "weight": "10.1%", "changeState": "持平", "streak": 0, "actionLog": "伺服器代工訂單能見度高"}
-            ]
+            ],
+            "chartData": {
+                "labels": ["10/01", "10/02", "10/03", "10/06", "10/07", "10/08", "10/09", "10/12", "10/13", "10/14"],
+                "prices": [22.0, 22.3, 22.6, 22.4, 22.8, 23.1, 22.9, 23.2, 22.9, 23.00]
+            }
         },
         {
             "code": "0050",
@@ -84,8 +129,43 @@
             "price": 185.50,
             "change": 1.50,
             "changePercent": 0.82,
+            "nav": 185.20,
+            "volume": "65,000張",
+            "scale": "新台幣 3,200 億",
             "ytdReturn": "+22.4%",
-            "description": "元大台灣50 市值型標竿。"
+            "description": "元大台灣50 市值型標竿。",
+            "holdings": [
+                {"symbol": "2330", "name": "台積電", "shares": "55,000張", "weight": "54.2%", "changeState": "持平", "streak": 0, "actionLog": "追蹤大盤權值配置"}
+            ],
+            "chartData": {
+                "labels": ["10/01", "10/02", "10/03", "10/06", "10/07", "10/08", "10/09", "10/12", "10/13", "10/14"],
+                "prices": [180.0, 181.5, 183.0, 182.0, 184.0, 186.0, 184.5, 187.0, 184.0, 185.50]
+            }
+        },
+        {
+            "code": "00631L",
+            "name": "元大台灣50正2",
+            "type": "leveraged",
+            "category": "2倍槓桿ETF",
+            "price": 210.00,
+            "change": 3.20,
+            "changePercent": 1.55,
+            "nav": 209.60,
+            "volume": "52,000張",
+            "scale": "新台幣 450 億",
+            "ytdReturn": "+48.5%",
+            "ret1Y": "+78.0%",
+            "ret2Y": "+145.0%",
+            "description": "元大台灣50正2 追求台股單日報酬率正向 2 倍。",
+            "leverageInfo": {
+                "multiplier": "2倍 (2x)",
+                "trackingIndex": "臺灣50指數",
+                "futuresMarginRatio": "期貨維持率平均保持在 280% 以上"
+            },
+            "chartData": {
+                "labels": ["10/01", "10/02", "10/03", "10/06", "10/07", "10/08", "10/09", "10/12", "10/13", "10/14"],
+                "prices": [198.0, 201.0, 205.0, 202.0, 207.0, 211.0, 208.0, 213.0, 207.0, 210.00]
+            }
         }
     ]
 }
