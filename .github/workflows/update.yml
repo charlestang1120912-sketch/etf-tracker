@@ -26,7 +26,9 @@ jobs:
         run: python etf_data.py
 
       - name: Commit and push changes
-        uses: stefanzweig/git-auto-commit-action@v4
-        with:
-          commit_message: "Auto-update ETF data via yfinance"
-          file_pattern: etf_data.json
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add etf_data.json
+          git commit -m "Auto-update ETF real-time data" || echo "No changes to commit"
+          git push
