@@ -1,15 +1,15 @@
 {
-    "update_time": "2026-10-14 03:08:48",
+    "update_time": "2026-10-14 03:14:52",
     "etfs": [
         {
             "code": "00981A",
             "name": "統一台股增長主動式ETF",
             "type": "active",
             "category": "主動式ETF",
-            "price": 113.6,
-            "change": -1.2,
-            "changePercent": -1.05,
-            "nav": 113.37,
+            "price": 113.7,
+            "change": -1.1,
+            "changePercent": -0.96,
+            "nav": 113.47,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -130,7 +130,7 @@
                     116.05,
                     114.95,
                     114.8,
-                    113.6
+                    113.7
                 ]
             }
         },
@@ -139,10 +139,10 @@
             "name": "群益台灣強棒主動式ETF",
             "type": "active",
             "category": "主動式ETF",
-            "price": 113.6,
-            "change": -1.2,
-            "changePercent": -1.05,
-            "nav": 113.37,
+            "price": 113.7,
+            "change": -1.1,
+            "changePercent": -0.96,
+            "nav": 113.47,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -263,7 +263,7 @@
                     116.05,
                     114.95,
                     114.8,
-                    113.6
+                    113.7
                 ]
             }
         },
@@ -272,10 +272,10 @@
             "name": "野村臺灣智慧優選主動式ETF",
             "type": "active",
             "category": "主動式ETF",
-            "price": 113.6,
-            "change": -1.2,
-            "changePercent": -1.05,
-            "nav": 113.37,
+            "price": 113.7,
+            "change": -1.1,
+            "changePercent": -0.96,
+            "nav": 113.47,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -396,7 +396,7 @@
                     116.05,
                     114.95,
                     114.8,
-                    113.6
+                    113.7
                 ]
             }
         },
@@ -405,10 +405,10 @@
             "name": "富邦台灣優勢動能主動式ETF",
             "type": "active",
             "category": "主動式ETF",
-            "price": 113.6,
-            "change": -1.2,
-            "changePercent": -1.05,
-            "nav": 113.37,
+            "price": 113.7,
+            "change": -1.1,
+            "changePercent": -0.96,
+            "nav": 113.47,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -529,7 +529,7 @@
                     116.05,
                     114.95,
                     114.8,
-                    113.6
+                    113.7
                 ]
             }
         },
@@ -538,10 +538,10 @@
             "name": "元大台灣卓越創新主動ETF",
             "type": "active",
             "category": "主動式ETF",
-            "price": 113.6,
-            "change": -1.2,
-            "changePercent": -1.05,
-            "nav": 113.37,
+            "price": 113.7,
+            "change": -1.1,
+            "changePercent": -0.96,
+            "nav": 113.47,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -662,7 +662,7 @@
                     116.05,
                     114.95,
                     114.8,
-                    113.6
+                    113.7
                 ]
             }
         },
@@ -671,10 +671,10 @@
             "name": "元大台灣50",
             "type": "benchmark",
             "category": "市值型標竿",
-            "price": 113.6,
-            "change": -1.2,
-            "changePercent": -1.05,
-            "nav": 113.37,
+            "price": 113.7,
+            "change": -1.1,
+            "changePercent": -0.96,
+            "nav": 113.47,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -795,7 +795,7 @@
                     116.05,
                     114.95,
                     114.8,
-                    113.6
+                    113.7
                 ]
             }
         },
@@ -804,10 +804,10 @@
             "name": "元大台灣50正2",
             "type": "leveraged",
             "category": "2倍槓桿ETF",
-            "price": 40.21,
-            "change": -0.68,
-            "changePercent": -1.66,
-            "nav": 40.13,
+            "price": 40.28,
+            "change": -0.61,
+            "changePercent": -1.49,
+            "nav": 40.2,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -928,7 +928,7 @@
                     41.75,
                     40.9,
                     40.89,
-                    40.21
+                    40.28
                 ]
             },
             "leverageInfo": {
@@ -942,10 +942,10 @@
             "name": "群益臺灣加權正2",
             "type": "leveraged",
             "category": "2倍槓桿ETF",
-            "price": 13.32,
-            "change": -0.23,
-            "changePercent": -1.7,
-            "nav": 13.29,
+            "price": 13.36,
+            "change": -0.19,
+            "changePercent": -1.4,
+            "nav": 13.33,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -1066,7 +1066,7 @@
                     13.84,
                     13.53,
                     13.55,
-                    13.32
+                    13.36
                 ]
             },
             "leverageInfo": {
@@ -1080,10 +1080,10 @@
             "name": "富邦臺灣正2",
             "type": "leveraged",
             "category": "2倍槓桿ETF",
-            "price": 353.0,
-            "change": -5.7,
-            "changePercent": -1.59,
-            "nav": 352.29,
+            "price": 353.6,
+            "change": -5.1,
+            "changePercent": -1.42,
+            "nav": 352.89,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -1204,7 +1204,7 @@
                     366.25,
                     357.75,
                     358.7,
-                    353.0
+                    353.6
                 ]
             },
             "leverageInfo": {
@@ -1218,10 +1218,10 @@
             "name": "國泰臺灣正2",
             "type": "leveraged",
             "category": "2倍槓桿ETF",
-            "price": 116.5,
-            "change": -1.9,
-            "changePercent": -1.6,
-            "nav": 116.27,
+            "price": 116.8,
+            "change": -1.6,
+            "changePercent": -1.35,
+            "nav": 116.57,
             "volume": "35,000張",
             "scale": "新台幣 100.0 億",
             "ytdReturn": "+18.5%",
@@ -1342,7 +1342,7 @@
                     120.8,
                     118.1,
                     118.4,
-                    116.5
+                    116.8
                 ]
             },
             "leverageInfo": {
